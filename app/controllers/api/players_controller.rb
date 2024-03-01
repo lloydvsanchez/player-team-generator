@@ -1,4 +1,6 @@
 class Api::PlayersController < ApplicationController
+  include Response
+
   before_action :authenticate, only: [:destroy]
 
   # GET /players
@@ -10,13 +12,13 @@ class Api::PlayersController < ApplicationController
   # POST /players
   def create
     player = Player.new(
-      player_params.merge({ player_skills_attributes: skills_params['player_skills'] })
+      player_params.merge({ player_skills_attributes: player_skills_params })
     )
 
     if player.save
-      render json: preformat_to_json(player)
+      json_response(preformat_to_json(player))
     else
-      render json: { message: player.first_error_message }, status: :unprocessable_entity
+      json_response({ message: player.first_error_message }, :unprocessable_entity)
     end
   end
 
@@ -27,12 +29,12 @@ class Api::PlayersController < ApplicationController
   # PUT /players/:id
   def update
     if player.update(player_params.merge({ player_skills_attributes: skills_params_with_id }))
-      render json: preformat_to_json(player)
+      json_response(preformat_to_json(player))
     else
-      render json: { message: player.first_error_message }, status: :unprocessable_entity
+      json_response({ message: player.first_error_message }, :unprocessable_entity)
     end
   rescue ActiveRecord::RecordNotFound
-    render json: { message: "Invalid value for id: #{player_params['id']}" }, status: :not_found
+    json_response({ message: "Invalid value for id: #{player_params_id}" }, :not_found)
   end
 
   # DELETE /players/:id
@@ -40,7 +42,7 @@ class Api::PlayersController < ApplicationController
     player.destroy
     head :ok
   rescue ActiveRecord::RecordNotFound
-    render json: { message: "Invalid value for id: #{player_params['id']}" }, status: :not_found
+    json_response({ message: "Invalid value for id: #{player_params_id}" }, :not_found)
   end
 
   private
@@ -51,21 +53,16 @@ class Api::PlayersController < ApplicationController
     head :unauthorized
   end
 
-  def token
-    Rails.application.credentials.authorization_header
-  end
-
-  def preformat_to_json(resource)
-    resource.as_json(
-      only: %w[id name position],
-      include: {
-        player_skills: { only: %w[id skill value]}
-      }
-    )
-  end
-
   def player
     @player ||= Player.includes(:player_skills).find(player_params['id'])
+  end
+
+  def player_params_id
+    @player_params_id ||= player_params['id']
+  end
+
+  def player_skills_params
+    @player_skills_params ||= skills_params['player_skills']
   end
 
   def player_params

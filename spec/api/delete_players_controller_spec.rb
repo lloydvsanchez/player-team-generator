@@ -24,6 +24,7 @@ describe Api::PlayersController, type: :request do
         delete "/api/players/100", params: {}, headers: authorization_header
 
         expect(response.status).to be 404
+        expect(JSON.parse(response.body)).to eq({ "message" => "Invalid value for id: 100" })
       end
     end
   end

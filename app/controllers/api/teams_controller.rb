@@ -1,20 +1,20 @@
 class Api::TeamsController < ApplicationController
+  include Response
+
   def selection_process
     selected_players = {}
 
     requirement_params.each do |requirement|
-      check_requirement(requirement)
-
-      position = requirement['position']
-      key = "#{position}-#{requirement['main_skill']}"
+      check_requirements(requirement)
+      key = "#{requirement['position']}-#{requirement['main_skill']}"
 
       next if selected_players.keys.include? key
       selected_players[key] = select_players(requirement).to_a
     end
 
-    render json: selected_players.values.flatten.uniq.collect { |player| preformat_to_json(player) }
+    json_response(selected_players.values.flatten.uniq.collect { |player| preformat_to_json(player) })
   rescue InsufficientPlayersForPositionError => e
-    render json: { message: e.message }, status: :unprocessable_entity
+    json_response({ message: e.message }, :unprocessable_entity)
   end
 
   private
@@ -32,25 +32,25 @@ class Api::TeamsController < ApplicationController
   end
 
   def select_players_by_position(requirement)
-    Player.includes(:player_skills)
-          .joins('INNER JOIN player_skills AS ps ON ps.player_id=players.id')
-          .where("position = ? AND ps.skill = ?",
-                 requirement['position'],
-                 requirement['main_skill'])
-          .order('ps.value DESC')
-          .limit(requirement['number_of_players'])
+    players_query.where("position = ? AND ps.skill = ?",
+                        requirement['position'],
+                        requirement['main_skill'])
+                 .limit(requirement['number_of_players'])
   end
 
   def select_players_by_value(requirement)
+    players_query.select("players.*, MAX(ps.value) as max")
+                 .where("position = ? AND ps.skill != ?",
+                        requirement['position'],
+                        requirement['main_skill'])
+                 .group(:id)
+                 .limit(requirement['number_of_players'])
+  end
+
+  def players_query
     Player.includes(:player_skills)
-          .select("players.*, MAX(ps.value) as max")
           .joins('INNER JOIN player_skills AS ps ON ps.player_id=players.id')
-          .where("position = ? AND ps.skill != ?",
-                 requirement['position'],
-                 requirement['main_skill'])
           .order('ps.value DESC')
-          .group(:id)
-          .limit(requirement['number_of_players'])
   end
 
   def requirement_params
@@ -59,16 +59,7 @@ class Api::TeamsController < ApplicationController
     end
   end
 
-  def preformat_to_json(resource)
-    resource.as_json(
-      only: %w[name position],
-      include: {
-        player_skills: { only: %w[skill value]}
-      }
-    )
-  end
-
-  def check_requirement(requirement)
+  def check_requirements(requirement)
     check_sufficient_players_for_position(requirement['position'], requirement['number_of_players'])
   end
 
