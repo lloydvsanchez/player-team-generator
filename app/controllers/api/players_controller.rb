@@ -1,6 +1,5 @@
 class Api::PlayersController < ApplicationController
   before_action :authenticate, only: [:destroy]
-  # wrap_parameters false
 
   # GET /players
   def index
@@ -70,7 +69,6 @@ class Api::PlayersController < ApplicationController
   end
 
   def player_params
-    # Todo: investigate wrap_parameters
     params.fetch('_json', params).permit(:id, :name, :position).to_h
   end
 

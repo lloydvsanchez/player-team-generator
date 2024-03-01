@@ -5,5 +5,6 @@ Rails.application.routes.draw do
   # root "articles#index"
   namespace :api, defaults: { format: :json } do
     resources :players, except: [:show]
+    post 'team/process', to: 'teams#selection_process'
   end
 end
