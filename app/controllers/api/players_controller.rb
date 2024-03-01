@@ -17,7 +17,7 @@ class Api::PlayersController < ApplicationController
     if player.save
       render json: preformat_to_json(player)
     else
-      render json: {message: 'invalid chuchu'}, status: :unprocessable_entity
+      render json: { message: player.first_error_message }, status: :unprocessable_entity
     end
   end
 
@@ -27,15 +27,13 @@ class Api::PlayersController < ApplicationController
 
   # PUT /players/:id
   def update
-    unless player
-      render json: {message: 'invalid chuchu no player'}, status: :unprocessable_entity
-    end
-
     if player.update(player_params.merge({ player_skills_attributes: skills_params_with_id }))
       render json: preformat_to_json(player)
     else
-      render json: { message: 'invalid chuchu' }, status: :unprocessable_entity
+      render json: { message: player.first_error_message }, status: :unprocessable_entity
     end
+  rescue ActiveRecord::RecordNotFound
+    render json: { message: "Invalid value for id: #{player_params['id']}" }, status: :not_found
   end
 
   # DELETE /players/:id
@@ -43,7 +41,7 @@ class Api::PlayersController < ApplicationController
     player.destroy
     head :ok
   rescue ActiveRecord::RecordNotFound
-    render json: { message: 'delete id' }, status: :not_found
+    render json: { message: "Invalid value for id: #{player_params['id']}" }, status: :not_found
   end
 
   private
@@ -51,7 +49,7 @@ class Api::PlayersController < ApplicationController
   def authenticate
     return if request.headers['Authorization'] == token
 
-    render json: { message: 'invalid bearer token' }, status: :unauthorized
+    head :unauthorized
   end
 
   def token

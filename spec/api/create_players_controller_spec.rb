@@ -17,7 +17,21 @@ describe Api::PlayersController, type: :request do
           },
         }
 
-        expect(response.status).to be_between(1, 900)
+        expect(response.status).to be 200
+      end
+
+      it "Should return error message" do
+        post '/api/players', params: {
+          "name" => "tst",
+          "position" => "defender1",
+          "player_skills" => [
+            {
+              "skill" => "defense",
+              "value" => 10,
+            }
+          ]
+        }
+        expect(JSON.parse(response.body)).to eq({"message" => "Invalid value for Position: defender1"})
       end
     end
   end

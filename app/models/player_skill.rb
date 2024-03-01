@@ -1,14 +1,7 @@
 class PlayerSkill < ApplicationRecord
-  PLAYER_SKILL = {
-    defense: 'Defense',
-    attack: 'Attack',
-    speed: 'Speed',
-    stamina: 'Stamina',
-    strength: 'Strength'
-  }
-  enum skill: PLAYER_SKILL
+  PLAYER_SKILL = %w(defense attack speed stamina strength)
 
   belongs_to :player
-  validates :skill, presence: true
+  validates :skill, inclusion: { in: PLAYER_SKILL }
   validates :value, presence: true
 end

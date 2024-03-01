@@ -18,5 +18,11 @@ RSpec.describe PlayerSkill do
       subject.valid?
       expect(subject.errors[:player]).to eq ["must exist"]
     end
+
+    it 'raises error when skill attribute is invalid' do
+      subject.skill = nil
+      subject.valid?
+      expect(subject.errors[:skill]).to eq ["is not included in the list"]
+    end
   end
 end

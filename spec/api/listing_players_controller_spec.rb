@@ -5,7 +5,7 @@ describe Api::PlayersController, type: :request do
       it 'should list' do
         get api_players_path
 
-        expect(response.status).to be_between(1, 900)
+        expect(response.status).to be 200
       end
     end
   end
